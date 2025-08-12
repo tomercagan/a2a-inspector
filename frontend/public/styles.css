@@ -32,6 +32,18 @@ body.dark-mode {
     --warning-color: #ffa500;
 }
 
+/* Use-taskid-label styles */
+.use-taskid-label {
+    align-items: center;
+    gap: 4px;
+    margin-left: 10px;
+    font-size: 0.95em;
+    display: flex;
+}
+
+.hidden {
+    display: none;
+}
 html,
 body {
     min-height: 100%;

@@ -142,6 +142,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatInput = document.getElementById('chat-input') as HTMLInputElement;
   const sendBtn = document.getElementById('send-btn') as HTMLButtonElement;
   const chatMessages = document.getElementById('chat-messages') as HTMLElement;
+  const useTaskIdCheckbox = document.getElementById(
+    'use-taskid-checkbox',
+  ) as HTMLInputElement;
+  const useTaskIdLabel = document.getElementById(
+    'use-taskid-label',
+  ) as HTMLLabelElement;
   const debugConsole = document.getElementById('debug-console') as HTMLElement;
   const debugHandle = document.getElementById('debug-handle') as HTMLElement;
   const debugContent = document.getElementById('debug-content') as HTMLElement;
@@ -707,6 +713,21 @@ document.addEventListener('DOMContentLoaded', () => {
     chatInput.disabled = true;
     sendBtn.disabled = true;
 
+    // Hide and disable the use-taskid checkbox and clear chat messages
+    if (useTaskIdLabel && useTaskIdCheckbox) {
+      useTaskIdLabel.classList.add('hidden');
+      useTaskIdCheckbox.disabled = true;
+      useTaskIdCheckbox.checked = false;
+    }
+    if (chatMessages) {
+      chatMessages.innerHTML =
+        '<p class="placeholder-text">Messages will appear here.</p>';
+    }
+
+    contextId = null;
+    previousTaskId = null;
+
+    // Get custom headers
     const customHeaders = getCustomHeaders();
     const requestHeaders = {
       'Content-Type': 'application/json',
@@ -912,6 +933,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  let previousTaskId: string | null = null;
+
   const sendMessage = () => {
     const messageText = chatInput.value;
     if ((messageText.trim() || attachments.length > 0) && !chatInput.disabled) {
@@ -936,13 +959,18 @@ document.addEventListener('DOMContentLoaded', () => {
         mimeType: a.mimeType,
       }));
 
-      socket.emit('send_message', {
+      let payload = {
         message: sanitizedMessage,
         id: messageId,
         contextId,
         metadata,
         attachments: attachmentsToSend,
-      });
+      };
+            
+      if (useTaskIdCheckbox && useTaskIdCheckbox.checked && previousTaskId) {
+        payload.taskId = previousTaskId;
+      }
+      socket.emit('send_message', payload);
 
       chatInput.value = '';
       attachments.length = 0;
@@ -1006,6 +1034,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const displayMessageId = `display-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     messageJsonStore[displayMessageId] = event;
+
+    // Show and enable the use-taskid checkbox if a response is received
+    if (useTaskIdLabel && useTaskIdCheckbox) {
+      useTaskIdLabel.classList.remove('hidden');
+      useTaskIdCheckbox.disabled = false;
+    }
+
+    // Store previous task_id if present
+    if (event.kind === 'task') {
+      previousTaskId = event.id;
+    }
 
     const validationErrors = event.validation_errors || [];
 

@@ -1,5 +1,4 @@
 import logging
-
 from typing import Any
 from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
@@ -8,27 +7,16 @@ import bleach
 import httpx
 import socketio
 import validators
-
 from a2a.client import A2ACardResolver
 from a2a.client.client import Client, ClientConfig, ClientEvent
 from a2a.client.client_factory import ClientFactory
-from a2a.types import (
-    AgentCard,
-    FilePart,
-    FileWithBytes,
-    Message,
-    Role,
-    Task,
-    TaskArtifactUpdateEvent,
-    TaskStatusUpdateEvent,
-    TextPart,
-    TransportProtocol,
-)
+from a2a.types import (AgentCard, FilePart, FileWithBytes, Message, Role, Task,
+                       TaskArtifactUpdateEvent, TaskStatusUpdateEvent,
+                       TextPart, TransportProtocol)
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-
 
 STANDARD_HEADERS = {
     'host',
@@ -321,6 +309,7 @@ async def handle_send_message(sid: str, json_data: dict[str, Any]) -> None:
     message_id = json_data.get('id', str(uuid4()))
     context_id = json_data.get('contextId')
     metadata = json_data.get('metadata', {})
+    task_id = json_data.get('taskId')
 
     if sid not in clients:
         await sio.emit(
@@ -353,6 +342,7 @@ async def handle_send_message(sid: str, json_data: dict[str, Any]) -> None:
         message_id=message_id,
         context_id=context_id,
         metadata=metadata,
+        task_id=task_id,
     )
 
     debug_request = {
